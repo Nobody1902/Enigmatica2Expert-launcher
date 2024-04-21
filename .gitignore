@@ -3,3 +3,6 @@ e2e-modpack-main
 __pycache__
 username.txt
 version.txt
+build
+dist
+build.zip
