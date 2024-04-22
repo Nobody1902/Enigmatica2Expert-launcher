@@ -5,4 +5,5 @@ username.txt
 version.txt
 build
 dist
-build.zip
+enigmatica2expert_*.zip
+*.spec

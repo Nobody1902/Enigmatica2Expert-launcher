@@ -1,14 +1,23 @@
+try: 
+    import queue
+except ImportError:
+    import Queue as queue
+
+
+import io
 import requests
-import dload
 import json
 import os
 import shutil
+import zipfile
+
+import win32gui, win32con
 
 MINECRAFT_DIRECTORY = os.path.join(os.curdir, ".minecraft")
 E2E_PROFILE_DIRECTORY = os.path.join(MINECRAFT_DIRECTORY, "profiles", "E2E")
 PYMINELAUNCHER = os.path.join(os.curdir, "pyminelauncher", "pml.exe")
 
-MODPACK_GITHUB_URL = "https://github.com/Nobody1902/e2e-modpack.git"
+MODPACK_GITHUB_URL = "https://github.com/Nobody1902/e2e-modpack/archive/refs/heads/main.zip"
 
 MODPACK_VERSION_URL = "https://raw.githubusercontent.com/Nobody1902/e2e-modpack/main/version.txt"
 VERSION_FILE = os.path.join(os.curdir, "version.txt")
@@ -51,17 +60,18 @@ def download_modpack():
 
 
     print("Downloading modpack - This may take a long time ...")
-    abs_tmp_path = os.curdir + "\\"
     # download github repo
-    modpack_path = dload.git_clone(MODPACK_GITHUB_URL, abs_tmp_path)
+    response = requests.get(MODPACK_GITHUB_URL, stream=True)
 
-    shutil.copytree(os.path.join(modpack_path, "e2e-modpack-main", "modpack"), os.path.join(E2E_PROFILE_DIRECTORY, "game"), dirs_exist_ok=True)
+    z = zipfile.ZipFile(io.BytesIO(response.content))
+    z.extractall(os.curdir)
+
+    shutil.copytree(os.path.join(os.curdir, "e2e-modpack-main", "modpack"), os.path.join(E2E_PROFILE_DIRECTORY, "game"), dirs_exist_ok=True)
     
     with open(VERSION_FILE, "w") as f:
         f.write(json.dumps({"version": version[0], "minecraft_version": version[1]}))
     
-    shutil.rmtree(os.path.join(modpack_path, "e2e-modpack-main"))
-
+    shutil.rmtree(os.path.join(os.curdir, "e2e-modpack-main"), ignore_errors=True)
 
 if not check_version():
     download_modpack()
@@ -78,4 +88,10 @@ if not os.path.exists(os.path.join(os.curdir, "username.txt")):
 with open(os.path.join(os.curdir, "username.txt"), "r") as f:
     username = f.read()
 
+
+the_program_to_hide = win32gui.GetForegroundWindow()
+win32gui.ShowWindow(the_program_to_hide , win32con.SW_HIDE)
+
 os.system(f"{PYMINELAUNCHER} launch E2E \"{username}\" 8192")
+
+win32gui.ShowWindow(the_program_to_hide, win32con.SW_SHOW)
